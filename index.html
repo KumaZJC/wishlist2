@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartBuy</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f6f7f9',
+              100: '#edeef2',
+              200: '#d7dae2',
+              500: '#475569',
+              800: '#1e293b',
+              900: '#0f172a',
+              gold: '#c29d59'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* 隐藏滚动条但保留平滑滚动 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* 移动端点击高亮清除 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 呼吸微动效 */
+    .pulse-glow {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] text-slate-800 font-sans min-h-screen pb-24 antialiased selection:bg-amber-100 selection:text-amber-900">
+
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 text-amber-300 flex items-center justify-center font-bold shadow-sm">
+          <i data-lucide="scale" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 tracking-tight leading-none flex items-center gap-1.5">
+            SmartBuy <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-200/60">理性购物</span>
+          </h1>
+          <p class="text-xs text-slate-500 mt-1 hidden sm:block">精准比对决策</p>
+        </div>
+      </div>
+
+      <!-- 快速操作区 -->
+      <div class="flex items-center gap-2">
+        <!-- 标签管理按钮 -->
+        <button onclick="openConfigModal()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border border-slate-200/80">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-600"></i>
+          <span>选项配置</span>
+        </button>
+        <button onclick="openDataModal()" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition border border-transparent hover:border-slate-200" title="数据备份与导入">
+          <i data-lucide="database" class="w-5 h-5"></i>
+        </button>
+        <button onclick="openNewItemModal()" class="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4 text-amber-400"></i>
+          <span>记录好物</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+    
+    <!-- 顶部状态统计看板 -->
+    <div class="grid grid-cols-3 gap-2.5 sm:gap-4 mb-4">
+      <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs text-slate-400 block font-medium">心愿待观望</span>
+          <span id="stat-watching" class="text-lg sm:text-xl font-bold text-slate-800">0</span>
+        </div>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i data-lucide="binoculars" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs text-slate-400 block font-medium">观望总底价预算</span>
+          <span id="stat-total-budget" class="text-lg sm:text-xl font-bold text-amber-600">¥0</span>
+        </div>
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+          <i data-lucide="piggy-bank" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs text-slate-400 block font-medium">已入手物品</span>
+          <span id="stat-purchased" class="text-lg sm:text-xl font-bold text-emerald-600">0</span>
+        </div>
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <i data-lucide="badge-check" class="w-4 h-4"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 搜索与多维度筛选器 -->
+    <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-3 mb-5">
+      <!-- 搜索输入框 -->
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input 
+          id="search-input" 
+          type="text" 
+          placeholder="搜索物品名、品牌、款式规格或场景关键词..." 
+          class="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 hover:bg-slate-100/80 focus:bg-white rounded-xl border border-transparent focus:border-slate-300 focus:outline-none transition"
+          oninput="renderCards()"
+        />
+        <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- 核心场景过滤（免税店、奥莱、大促等）横向滚动胶囊 -->
+      <div>
+        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> 目标比价场景</span>
+          <button onclick="openConfigModalTab('scenarios')" class="text-[11px] text-amber-600 hover:underline flex items-center gap-0.5">
+            <i data-lucide="settings" class="w-3 h-3"></i>管理场景
+          </button>
+        </div>
+        <div id="scene-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+          <!-- 由 JS 渲染 -->
+        </div>
+      </div>
+
+      <!-- 品类与状态筛选 -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
+        <div class="flex items-center gap-2 overflow-hidden flex-1">
+          <span class="text-[11px] text-slate-400 shrink-0 font-medium">分类:</span>
+          <div id="category-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs flex-1">
+            <!-- 由 JS 渲染 -->
+          </div>
+          <button onclick="openConfigModalTab('categories')" class="text-[11px] text-amber-600 hover:underline shrink-0 pl-1">
+            +管理
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <select id="status-filter" onchange="renderCards()" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 outline-none focus:border-slate-400">
+            <!-- 动态生成状态筛选 -->
+          </select>
+          <select id="sort-filter" onchange="renderCards()" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 outline-none focus:border-slate-400">
+            <option value="date-desc">最新添加</option>
+            <option value="price-asc">心理底价 从低到高</option>
+            <option value="price-desc">心理底价 从高到低</option>
+            <option value="gap-desc">预期折扣力度最高</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 列表展示区域 -->
+    <div id="items-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- 卡片动态生成 -->
+    </div>
+
+    <!-- 空状态插画 -->
+    <div id="empty-state" class="hidden text-center py-16 px-4">
+      <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
+        <i data-lucide="package-search" class="w-8 h-8"></i>
+      </div>
+      <h3 class="font-bold text-slate-700 text-base">暂无匹配的待购好物</h3>
+      <p class="text-sm text-slate-400 mt-1 max-w-sm mx-auto">添加你的第一个心愿物品，或者清除筛选条件试试！</p>
+      <button onclick="resetFilters()" class="mt-4 px-4 py-2 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-xl transition">
+        重置筛选
+      </button>
+    </div>
+  </main>
+
+  <div id="modal-item" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden transition-opacity">
+    <div class="bg-white w-full max-w-xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- 模态框 Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 id="modal-item-title" class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+          <span>记录想买好物</span>
+        </h3>
+        <button onclick="closeModal('modal-item')" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 模态框 表单内容 -->
+      <form id="item-form" onsubmit="handleSaveItem(event)" class="overflow-y-auto p-5 sm:p-6 space-y-4 text-sm flex-1">
+        <input type="hidden" id="item-id" />
+
+        <!-- 基础信息 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">物品名称 <span class="text-red-500">*</span></label>
+            <input type="text" id="item-title" required placeholder="如：索尼 24-70mm F2.8 GM II" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 / 厂商</label>
+            <input type="text" id="item-brand" placeholder="如：Sony / 始祖鸟 / 雅诗兰黛" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+          </div>
+        </div>
+
+        <!-- 动态分类与比价主要场景 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-600">所属分类</label>
+              <button type="button" onclick="openConfigModalTab('categories')" class="text-[11px] text-amber-600 hover:underline">+自定义分类</button>
+            </div>
+            <select id="item-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white">
+              <!-- 动态填充 -->
+            </select>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-600">目标比价场景</label>
+              <button type="button" onclick="openConfigModalTab('scenarios')" class="text-[11px] text-amber-600 hover:underline">+自定义场景</button>
+            </div>
+            <select id="item-scene" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white">
+              <!-- 动态填充 -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 款式规格与尺码 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">款式 / 颜色 / 货号</label>
+            <input type="text" id="item-spec" placeholder="如：黑色磨砂款 / 01号象牙白" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">尺寸 / 尺码 / 规格</label>
+            <input type="text" id="item-size" placeholder="如：EU 42码 (内长265) / 100ml / 28寸" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+          </div>
+        </div>
+
+        <!-- 价格锚定与心理预期 -->
+        <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/60 space-y-3">
+          <div class="flex items-center justify-between text-xs text-amber-900 font-semibold">
+            <span>价格设定与底价锚定 (折合人民币 CNY)</span>
+            <span class="text-[11px] font-normal text-amber-700">★ 理性消费核心依据</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">专柜参考原价 (¥)</label>
+              <input type="number" id="item-original-price" step="any" placeholder="专柜标价 1699" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-800 font-bold mb-1">心理入手底价 (¥) <span class="text-red-500">*</span></label>
+              <input type="number" id="item-target-price" step="any" required placeholder="如 ≤ 1199 才入" class="w-full px-3 py-2 border border-amber-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white font-semibold text-amber-900" />
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-500">提示：到免税店或奥莱时，现场售价低于此底价即为“神价可冲”！</p>
+        </div>
+
+        <!-- 图片处理 (支持上传本地文件/小红书淘宝截图，或填图片链接) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">物品图片 (淘宝/小红书截图或外链)</label>
+          <div class="flex items-center gap-2 mb-2">
+            <input type="url" id="item-image-url" placeholder="可粘贴图片网址 (https://...)" class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" onchange="previewExternalImage(this.value)" />
+            <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-xl font-medium border border-slate-200 flex items-center gap-1 shrink-0 transition">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>传本地图</span>
+              <input type="file" id="item-file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+            </label>
+          </div>
+          <div id="image-preview-container" class="relative w-full h-32 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center">
+            <img id="image-preview" src="" alt="预览图" class="w-full h-full object-cover hidden" />
+            <div id="image-preview-placeholder" class="text-xs text-slate-400 flex flex-col items-center gap-1">
+              <i data-lucide="image" class="w-6 h-6 text-slate-300"></i>
+              <span>暂无图片 (建议上传截图，在免税店找店员对图更方便)</span>
+            </div>
+            <button type="button" id="remove-img-btn" onclick="clearImage()" class="hidden absolute top-2 right-2 p-1 bg-black/60 hover:bg-black/80 text-white rounded-full">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 外部链接 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">种草/购买链接 (淘宝/小红书/京东/官网)</label>
+          <div class="relative">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="url" id="item-link" placeholder="https://..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+          </div>
+        </div>
+
+        <!-- 避坑与攻略备注 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">比价要点与备忘备忘录</label>
+          <textarea id="item-notes" rows="2" placeholder="例：日上免税店买三件可再打85折；日本成田机场有专门配额；国内专柜试穿过42码略紧建议入42.5码..." class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white"></textarea>
+        </div>
+
+        <!-- 动态自定义状态选择 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold text-slate-600">心愿状态</label>
+            <button type="button" onclick="openConfigModalTab('statuses')" class="text-[11px] text-amber-600 hover:underline">+自定义状态标签</button>
+          </div>
+          <div id="item-status-radios" class="flex flex-wrap gap-2">
+            <!-- 动态状态单选标签 -->
+          </div>
+        </div>
+
+        <!-- 底部提交按钮 -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-item')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-medium transition">取消</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition">保存好物备忘</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-config" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden transition-opacity">
+    <div class="bg-white w-full max-w-xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- 配置 Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-slate-900 text-amber-300 flex items-center justify-center font-bold">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">自定义标签与场景配置</h3>
+            <p class="text-xs text-slate-500">自由增删所属分类、比价场景及心愿状态</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-config')" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Tab 切换 -->
+      <div class="flex border-b border-slate-200 bg-slate-50 px-6 gap-6 text-xs font-semibold">
+        <button id="tab-btn-categories" onclick="switchConfigTab('categories')" class="py-3 border-b-2 border-slate-900 text-slate-900 transition flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+          <span>所属分类 (<span id="count-categories">0</span>)</span>
+        </button>
+        <button id="tab-btn-scenarios" onclick="switchConfigTab('scenarios')" class="py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+          <span>目标比价场景 (<span id="count-scenarios">0</span>)</span>
+        </button>
+        <button id="tab-btn-statuses" onclick="switchConfigTab('statuses')" class="py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-1.5">
+          <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+          <span>心愿状态 (<span id="count-statuses">0</span>)</span>
+        </button>
+      </div>
+
+      <!-- 内容主体 -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-5 text-sm">
+        
+        <!-- Tab 1: 所属分类管理 -->
+        <div id="tab-content-categories" class="space-y-4">
+          <!-- 新增分类表单 -->
+          <form onsubmit="handleAddCategory(event)" class="flex gap-2">
+            <input type="text" id="input-new-category" required placeholder="输入新分类名称 (如：乐器黑胶、中古Vintage...)" class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800" />
+            <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium shrink-0 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>添加分类</span>
+            </button>
+          </form>
+
+          <!-- 分类列表 -->
+          <div class="space-y-2">
+            <div class="text-[11px] font-semibold text-slate-400">已有分类选项：</div>
+            <div id="config-categories-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+              <!-- 动态注入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 目标场景管理 -->
+        <div id="tab-content-scenarios" class="space-y-4 hidden">
+          <!-- 新增场景表单 -->
+          <form onsubmit="handleAddScenario(event)" class="flex gap-2">
+            <input type="text" id="input-new-scenario" required placeholder="输入新比价场景 (如：三亚免税城、香港专柜、日本中古店...)" class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800" />
+            <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium shrink-0 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>添加场景</span>
+            </button>
+          </form>
+
+          <!-- 场景列表 -->
+          <div class="space-y-2">
+            <div class="text-[11px] font-semibold text-slate-400">已有场景选项：</div>
+            <div id="config-scenarios-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+              <!-- 动态注入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 心愿状态管理 -->
+        <div id="tab-content-statuses" class="space-y-4 hidden">
+          <!-- 新增状态表单 -->
+          <form onsubmit="handleAddStatus(event)" class="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+            <div class="flex gap-2">
+              <input type="text" id="input-new-status-name" required placeholder="状态名称 (如：试穿过待降价、神价秒抢...)" class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 bg-white" />
+              <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium shrink-0 flex items-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>新增状态</span>
+              </button>
+            </div>
+            
+            <!-- 状态预设色彩选择 -->
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">选择徽章色调：</span>
+              <div id="status-color-picker" class="flex items-center gap-3">
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="status-color" value="blue" checked class="accent-blue-600" />
+                  <span class="text-xs px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-medium">科技蓝</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="status-color" value="emerald" class="accent-emerald-600" />
+                  <span class="text-xs px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-medium">品质绿</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="status-color" value="amber" class="accent-amber-600" />
+                  <span class="text-xs px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 font-medium">暖金黄</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="status-color" value="purple" class="accent-purple-600" />
+                  <span class="text-xs px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 font-medium">典雅紫</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="status-color" value="slate" class="accent-slate-600" />
+                  <span class="text-xs px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 font-medium">沉稳灰</span>
+                </label>
+              </div>
+            </div>
+          </form>
+
+          <!-- 状态列表 -->
+          <div class="space-y-2">
+            <div class="text-[11px] font-semibold text-slate-400">当前已定义状态：</div>
+            <div id="config-statuses-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+              <!-- 动态注入 -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 配置底部功能 -->
+      <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
+        <button onclick="restoreDefaultConfigs()" class="text-slate-500 hover:text-slate-900 underline flex items-center gap-1">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>恢复官方默认所有选项</span>
+        </button>
+        <button onclick="closeModal('modal-config')" class="px-4 py-2 bg-slate-900 text-white rounded-xl font-semibold">
+          完成并保存
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="modal-compare" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden transition-opacity">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- 比较器 顶部头部 -->
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
+            <i data-lucide="calculator" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base leading-tight">现场即时比价计算器</h3>
+            <p id="compare-target-title" class="text-xs text-slate-300 truncate max-w-[220px]">物品名称加载中...</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-compare')" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 sm:p-6 space-y-4 text-sm overflow-y-auto max-h-[85vh]">
+        <input type="hidden" id="compare-item-id" />
+
+        <!-- 价格基准参考看板 -->
+        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+          <div>
+            <span class="text-[11px] text-slate-400 block">心理入手底价</span>
+            <span id="compare-target-price-display" class="font-bold text-amber-600 text-base">¥ 0</span>
+          </div>
+          <div>
+            <span class="text-[11px] text-slate-400 block">国内专柜原价</span>
+            <span id="compare-origin-price-display" class="font-bold text-slate-500 text-base">¥ 0</span>
+          </div>
+        </div>
+
+        <!-- 现场报价录入区 -->
+        <div class="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <i data-lucide="store" class="w-4 h-4 text-amber-500"></i>
+            <span>免税店 / 现场看到的价格</span>
+          </div>
+
+          <!-- 货币选择与汇率 -->
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">币种</label>
+              <select id="compare-currency" onchange="handleCurrencyChange()" class="w-full p-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-slate-800">
+                <option value="CNY" data-rate="1.0">¥ CNY (人民币)</option>
+                <option value="JPY" data-rate="0.048">¥ JPY (日元)</option>
+                <option value="USD" data-rate="7.25"> 美元 ($)</option>
+                <option value="EUR" data-rate="7.85"> 欧元 (€)</option>
+                <option value="KRW" data-rate="0.0053">₩ 韩元 (KRW)</option>
+                <option value="HKD" data-rate="0.93">HK$ 港币</option>
+                <option value="GBP" data-rate="9.20">£ 英镑</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">参考汇率 (对CNY)</label>
+              <input type="number" id="compare-rate" step="0.0001" value="1.0" oninput="calculateDecision()" class="w-full p-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500 mb-1">现场折扣 (如0.9折)</label>
+              <input type="number" id="compare-discount" step="0.01" value="1.0" placeholder="1.0代表原价" oninput="calculateDecision()" class="w-full p-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- 现场标价输入 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">现场标牌外币价格</label>
+              <div class="relative">
+                <span id="compare-currency-symbol" class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">¥</span>
+                <input type="number" id="compare-input-price" step="any" placeholder="输入现场金额" oninput="calculateDecision()" class="w-full pl-8 pr-3 py-2.5 text-base font-bold text-slate-900 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">比价地点/渠道名</label>
+              <input type="text" id="compare-location-tag" placeholder="如：羽田机场免税店 / 三亚海旅" class="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 智能决策研判仪表盘 (智能指示灯) -->
+        <div id="decision-panel" class="rounded-2xl p-4 border transition-all duration-300 bg-slate-50 border-slate-200">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-500">折合人民币折算价</span>
+            <span id="calc-cny-price" class="text-2xl font-black text-slate-900">¥ --</span>
+          </div>
+
+          <!-- 决策状态条 -->
+          <div id="decision-badge" class="py-2.5 px-3.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 bg-slate-200 text-slate-600">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+            <span>请输入现场价格进行比对研判</span>
+          </div>
+
+          <!-- 详细差额对比 -->
+          <div id="decision-details" class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-200/60 text-xs hidden">
+            <div>
+              <span class="text-slate-400 block">相比专柜节省</span>
+              <span id="calc-saved-original" class="font-bold text-emerald-600">--</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">与心理底价差额</span>
+              <span id="calc-target-diff" class="font-bold">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 将这次比价记录沉淀到历史价格中 -->
+        <div class="space-y-2">
+          <button type="button" onclick="recordCurrentQuote()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="bookmark-plus" class="w-4 h-4 text-amber-400"></i>
+            <span>保存此报价到该物品历史比价线</span>
+          </button>
+        </div>
+
+        <!-- 该好物历史报价足迹 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
+            <span>历史比价足迹点</span>
+            <span id="quote-count" class="text-[10px]">0 条</span>
+          </div>
+          <div id="quote-history-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs">
+            <!-- 历史记录节点 -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-data" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i data-lucide="hard-drive" class="w-4 h-4 text-slate-700"></i>
+          <span>本地数据备份与同步</span>
+        </h3>
+        <button onclick="closeModal('modal-data')" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        所有物品、比价历史以及您的<strong>自定义分类/场景/状态配置</strong>均完全存储在当前浏览器本地中。导出备份时将一并打包带走。
+      </p>
+
+      <div class="space-y-2 pt-2">
+        <button onclick="exportDataJSON()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center justify-center gap-2 transition">
+          <i data-lucide="download" class="w-4 h-4 text-slate-600"></i>
+          <span>导出完整备份包 (JSON)</span>
+        </button>
+
+        <label class="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition">
+          <i data-lucide="upload" class="w-4 h-4 text-slate-600"></i>
+          <span>导入数据备份包 (JSON)</span>
+          <input type="file" accept=".json" class="hidden" onchange="importDataJSON(event)" />
+        </label>
+
+        <button onclick="loadSamplePresetData()" class="w-full py-2.5 px-4 rounded-xl text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold text-xs flex items-center justify-center gap-2 transition">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-600"></i>
+          <span>重新加载官方精选对比示例数据</span>
+        </button>
+      </div>
+
+      <div class="pt-2 text-center">
+        <button onclick="clearAllDataWithConfirm()" class="text-[11px] text-red-500 hover:text-red-700 underline">
+          清空所有数据（恢复全新状态）
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 存储键名
+    const STORAGE_KEY_ITEMS = 'smartbuy_wishlist_items_v2';
+    const STORAGE_KEY_CONFIG = 'smartbuy_configs_v2';
+
+    // 默认内置配置
+    const DEFAULT_CONFIGS = {
+      categories: [
+        '数码摄影',
+        '户外机能',
+        '服饰鞋包',
+        '美妆香氛',
+        '生活美学',
+        '潮玩杂货'
+      ],
+      scenarios: [
+        '机场/日上免税店',
+        '海外旅行专柜',
+        '奥特莱斯折扣店',
+        '大促/双11/618',
+        '海淘/代购直邮',
+        '日常随时关注'
+      ],
+      statuses: [
+        { id: 'watching', name: '观望中/等好价', color: 'blue' },
+        { id: 'fitting', name: '已试穿/待比价', color: 'amber' },
+        { id: 'urgent', name: '神价随时冲', color: 'purple' },
+        { id: 'purchased', name: '已拔草/好价入手', color: 'emerald' },
+        { id: 'dropped', name: '已放弃/拔草', color: 'slate' }
+      ]
+    };
+
+    // 默认示例商品
+    const SAMPLE_ITEMS = [
+      {
+        id: 'sample-1',
+        title: '索尼 FE 24-70mm F2.8 GM II 全画幅变焦镜头',
+        brand: 'SONY (索尼)',
+        category: '数码摄影',
+        scene: '海外旅行专柜',
+        spec: '二代红G 黑色标准变焦',
+        size: '82mm 滤镜口径 / 695g',
+        originalPrice: 15999,
+        targetPrice: 12500,
+        currency: 'CNY',
+        notes: '去日本东京中野 Fujiya Camera 或者秋叶原 Sofmap 看看免税加银联95折能不能做到12000以内。低于12500直接刷卡。',
+        imageUrl: 'https://images.unsplash.com/photo-1617005082133-548c4dd27f35?w=600&auto=format&fit=crop&q=80',
+        link: 'https://www.sony.com.cn',
+        status: 'watching',
+        createdAt: '2026-03-10',
+        quotes: [
+          { date: '2026-03-15', location: '国内电商大促', priceOriginal: 13999, currency: 'CNY', priceCNY: 13999 },
+          { date: '2026-04-02', location: '日本成田免税', priceOriginal: 270000, currency: 'JPY', priceCNY: 12960 }
+        ]
+      },
+      {
+        id: 'sample-2',
+        title: '始祖鸟 Beta LT 防水冲锋衣',
+        brand: 'Arc\'teryx',
+        category: '户外机能',
+        scene: '奥特莱斯折扣店',
+        spec: 'GORE-TEX 黑色/黑曜石',
+        size: 'L 码 (内搭羽绒留空间)',
+        originalPrice: 4800,
+        targetPrice: 3200,
+        currency: 'CNY',
+        notes: '国内专柜常年缺货。关注海外奥特莱斯折扣或加拿大海淘，心理底价3200，超过3600坚决不接盘。',
+        imageUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=600&auto=format&fit=crop&q=80',
+        link: '',
+        status: 'fitting',
+        createdAt: '2026-02-18',
+        quotes: [
+          { date: '2026-02-25', location: '国内专柜试穿标价', priceOriginal: 4800, currency: 'CNY', priceCNY: 4800 }
+        ]
+      },
+      {
+        id: 'sample-3',
+        title: 'Le Labo Santal 33 檀木浓香水 100ml',
+        brand: 'Le Labo (勒莱柏)',
+        category: '美妆香氛',
+        scene: '机场/日上免税店',
+        spec: 'Eau de Parfum',
+        size: '100 ml 喷雾装',
+        originalPrice: 2480,
+        targetPrice: 1550,
+        currency: 'CNY',
+        notes: '日上免税店或者韩国仁川机场新罗免税店偶尔有2件8折券，拼单到手通常1500左右是好价。买前注意批号保质期。',
+        imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&auto=format&fit=crop&q=80',
+        link: '',
+        status: 'urgent',
+        createdAt: '2026-01-20',
+        quotes: [
+          { date: '2026-02-10', location: '上海日上免税行', priceOriginal: 1620, currency: 'CNY', priceCNY: 1620 }
+        ]
+      }
+    ];
+
+    // 全局状态变量
+    let items = [];
+    let appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+    let activeScene = '全部';
+    let activeCategory = '全部';
+    let currentUploadedBase64 = '';
+    let currentCompareItem = null;
+
+    // 颜色配置映射字典
+    const COLOR_MAP = {
+      blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-800' },
+      emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-800' },
+      amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-800' },
+      purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-800' },
+      slate: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', badge: 'bg-slate-200 text-slate-700' }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAllData();
+      refreshAllDynamicUI();
+      lucide.createIcons();
+    });
+
+    // 读取本地存储中的物品与配置
+    function loadAllData() {
+      try {
+        const storedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
+        if (storedConfig) {
+          appConfig = JSON.parse(storedConfig);
+          // 确保结构完备
+          if (!appConfig.categories) appConfig.categories = [...DEFAULT_CONFIGS.categories];
+          if (!appConfig.scenarios) appConfig.scenarios = [...DEFAULT_CONFIGS.scenarios];
+          if (!appConfig.statuses) appConfig.statuses = [...DEFAULT_CONFIGS.statuses];
+        } else {
+          appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+          saveConfigs();
+        }
+
+        const storedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
+        if (storedItems) {
+          items = JSON.parse(storedItems);
+        } else {
+          items = SAMPLE_ITEMS;
+          saveItems();
+        }
+      } catch (err) {
+        console.error('初始化数据加载异常:', err);
+        appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+        items = SAMPLE_ITEMS;
+      }
+    }
+
+    function saveItems() {
+      localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(items));
+      updateStats();
+    }
+
+    function saveConfigs() {
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appConfig));
+    }
+
+    // 重新渲染所有依赖自定义标签的组件
+    function refreshAllDynamicUI() {
+      renderScenePills();
+      renderCategoryPills();
+      renderStatusFilterDropdown();
+      populateFormDropdowns();
+      renderConfigManagementLists();
+      renderCards();
+      updateStats();
+      lucide.createIcons();
+    }
+
+    function renderScenePills() {
+      const container = document.getElementById('scene-pills');
+      const list = ['全部', ...appConfig.scenarios];
+      
+      // 若当前选中的场景被删除了，回退到全部
+      if (activeScene !== '全部' && !appConfig.scenarios.includes(activeScene)) {
+        activeScene = '全部';
+      }
+
+      container.innerHTML = list.map(scene => {
+        const isActive = activeScene === scene;
+        return `
+          <button 
+            onclick="selectScene('${escapeHtml(scene)}')"
+            class="px-3 py-1.5 rounded-xl font-medium shrink-0 transition ${
+              isActive 
+                ? 'bg-slate-900 text-white shadow-xs' 
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            }"
+          >
+            ${escapeHtml(scene)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectScene(scene) {
+      activeScene = scene;
+      renderScenePills();
+      renderCards();
+    }
+
+    function renderCategoryPills() {
+      const container = document.getElementById('category-pills');
+      const list = ['全部', ...appConfig.categories];
+
+      if (activeCategory !== '全部' && !appConfig.categories.includes(activeCategory)) {
+        activeCategory = '全部';
+      }
+
+      container.innerHTML = list.map(cat => {
+        const isActive = activeCategory === cat;
+        return `
+          <button 
+            onclick="selectCategory('${escapeHtml(cat)}')"
+            class="px-2.5 py-1 rounded-lg font-medium shrink-0 transition ${
+              isActive 
+                ? 'bg-amber-100 text-amber-900 font-semibold' 
+                : 'text-slate-500 hover:text-slate-900'
+            }"
+          >
+            ${escapeHtml(cat)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategory(cat) {
+      activeCategory = cat;
+      renderCategoryPills();
+      renderCards();
+    }
+
+    function renderStatusFilterDropdown() {
+      const select = document.getElementById('status-filter');
+      const currentVal = select.value || 'all';
+
+      let optionsHtml = `<option value="all">全部心愿状态</option>`;
+      appConfig.statuses.forEach(s => {
+        optionsHtml += `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`;
+      });
+
+      select.innerHTML = optionsHtml;
+      // 保持先前的选择，如果没有则默认全部
+      if ([...select.options].some(o => o.value === currentVal)) {
+        select.value = currentVal;
+      } else {
+        select.value = 'all';
+      }
+    }
+
+    // 填充“添加/编辑好物”表单里的下拉框与单选按钮
+    function populateFormDropdowns() {
+      // 1. 所属分类下拉
+      const catSelect = document.getElementById('item-category');
+      catSelect.innerHTML = appConfig.categories.map(c => 
+        `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+      ).join('');
+
+      // 2. 比价场景下拉
+      const scnSelect = document.getElementById('item-scene');
+      scnSelect.innerHTML = appConfig.scenarios.map(s => 
+        `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`
+      ).join('');
+
+      // 3. 心愿状态单选区
+      const statusContainer = document.getElementById('item-status-radios');
+      statusContainer.innerHTML = appConfig.statuses.map((s, index) => {
+        const color = COLOR_MAP[s.color] || COLOR_MAP.blue;
+        return `
+          <label class="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 text-xs font-medium cursor-pointer transition has-[:checked]:${color.bg} has-[:checked]:${color.border} has-[:checked]:${color.text} has-[:checked]:font-bold hover:bg-slate-50">
+            <input type="radio" name="item-status" value="${escapeHtml(s.id)}" class="hidden" ${index === 0 ? 'checked' : ''} />
+            <span>${escapeHtml(s.name)}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function renderCards() {
+      const container = document.getElementById('items-grid');
+      const emptyState = document.getElementById('empty-state');
+      const searchVal = (document.getElementById('search-input').value || '').trim().toLowerCase();
+      const statusFilter = document.getElementById('status-filter').value;
+      const sortFilter = document.getElementById('sort-filter').value;
+
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (searchVal) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      let filtered = items.filter(item => {
+        if (activeScene !== '全部' && item.scene !== activeScene) return false;
+        if (activeCategory !== '全部' && item.category !== activeCategory) return false;
+        if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+        if (searchVal) {
+          const textMatch = 
+            (item.title && item.title.toLowerCase().includes(searchVal)) ||
+            (item.brand && item.brand.toLowerCase().includes(searchVal)) ||
+            (item.spec && item.spec.toLowerCase().includes(searchVal)) ||
+            (item.size && item.size.toLowerCase().includes(searchVal)) ||
+            (item.notes && item.notes.toLowerCase().includes(searchVal)) ||
+            (item.scene && item.scene.toLowerCase().includes(searchVal));
+          if (!textMatch) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        if (sortFilter === 'date-desc') {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        } else if (sortFilter === 'price-asc') {
+          return (a.targetPrice || 0) - (b.targetPrice || 0);
+        } else if (sortFilter === 'price-desc') {
+          return (b.targetPrice || 0) - (a.targetPrice || 0);
+        } else if (sortFilter === 'gap-desc') {
+          const discountA = a.originalPrice ? ((a.originalPrice - a.targetPrice) / a.originalPrice) : 0;
+          const discountB = b.originalPrice ? ((b.originalPrice - b.targetPrice) / b.originalPrice) : 0;
+          return discountB - discountA;
+        }
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = filtered.map(item => {
+        // 根据自定义状态渲染状态徽章
+        const statusConfig = appConfig.statuses.find(s => s.id === item.status) || {
+          name: item.status || '未定义',
+          color: 'slate'
+        };
+        const colorToken = COLOR_MAP[statusConfig.color] || COLOR_MAP.slate;
+        const statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${colorToken.badge} border border-black/5 shadow-2xs">${escapeHtml(statusConfig.name)}</span>`;
+
+        // 计算目标折扣比率
+        let discountTag = '';
+        if (item.originalPrice && item.targetPrice && item.originalPrice > item.targetPrice) {
+          const rate = Math.round((item.targetPrice / item.originalPrice) * 10);
+          const saveVal = item.originalPrice - item.targetPrice;
+          discountTag = `<span class="text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md">底价约${rate}折 (省¥${Math.round(saveVal)})</span>`;
+        }
+
+        const latestQuote = item.quotes && item.quotes.length > 0 ? item.quotes[item.quotes.length - 1] : null;
+
+        const safeTitle = escapeHtml(item.title);
+        const safeBrand = escapeHtml(item.brand || '精选品牌');
+        const safeSpec = escapeHtml(item.spec || '');
+        const safeSize = escapeHtml(item.size || '');
+        const safeNotes = escapeHtml(item.notes || '');
+
+        return `
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-slate-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
+            
+            <div>
+              <div class="relative w-full h-44 bg-slate-100 overflow-hidden">
+                ${
+                  item.imageUrl 
+                    ? `<img src="${item.imageUrl}" alt="${safeTitle}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/600x400/f1f5f9/94a3b8?text=暂无图片'" />`
+                    : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100">
+                        <i data-lucide="package" class="w-10 h-10 stroke-1 mb-1"></i>
+                        <span class="text-xs">等待补充商品图片</span>
+                       </div>`
+                }
+                <!-- 场景浮标 -->
+                <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                  <span class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-900/85 backdrop-blur-md text-white shadow-xs">
+                    ${escapeHtml(item.scene || '默认场景')}
+                  </span>
+                </div>
+
+                <!-- 状态浮标 -->
+                <div class="absolute top-3 right-3">
+                  ${statusBadge}
+                </div>
+              </div>
+
+              <!-- 卡片主体文字 -->
+              <div class="p-4 sm:p-5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <span class="font-medium text-slate-500">${safeBrand}</span>
+                  <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[11px] font-medium">${escapeHtml(item.category || '未分类')}</span>
+                </div>
+
+                <h3 class="font-bold text-slate-900 text-base leading-snug line-clamp-2 hover:text-amber-700 transition" title="${safeTitle}">
+                  ${safeTitle}
+                </h3>
+
+                <!-- 款式与尺码规格 (针对免税店/奥莱试穿的核心比对信息) -->
+                ${(safeSpec || safeSize) ? `
+                  <div class="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    ${safeSize ? `<span class="bg-white px-2 py-0.5 rounded-lg border border-slate-200/80 font-medium text-slate-800 flex items-center gap-1"><i data-lucide="ruler" class="w-3 h-3 text-amber-600"></i> ${safeSize}</span>` : ''}
+                    ${safeSpec ? `<span class="bg-white px-2 py-0.5 rounded-lg border border-slate-200/80 font-medium text-slate-700 truncate max-w-[170px]" title="${safeSpec}"><i data-lucide="palette" class="w-3 h-3 text-blue-500 inline mr-0.5"></i> ${safeSpec}</span>` : ''}
+                  </div>
+                ` : ''}
+
+                <!-- 价格看板 -->
+                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-end justify-between">
+                  <div>
+                    <span class="text-[11px] text-slate-400 block font-medium">心理入手底价</span>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-xl font-black text-amber-600 tracking-tight">¥${Number(item.targetPrice || 0).toLocaleString()}</span>
+                      ${item.originalPrice ? `<span class="text-xs text-slate-400 line-through">¥${Number(item.originalPrice).toLocaleString()}</span>` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    ${discountTag}
+                  </div>
+                </div>
+
+                <!-- 避坑与攻略备注 -->
+                ${safeNotes ? `
+                  <div class="mt-3 text-xs text-slate-600 bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/60 leading-relaxed flex items-start gap-1.5">
+                    <i data-lucide="sticky-note" class="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"></i>
+                    <p class="line-clamp-2" title="${safeNotes}">${safeNotes}</p>
+                  </div>
+                ` : ''}
+
+                <!-- 最新比价记录提示 -->
+                ${latestQuote ? `
+                  <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+                    <span>最新见价：${escapeHtml(latestQuote.location)}</span>
+                    <span class="font-bold text-slate-700">¥${latestQuote.priceCNY}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- 下半部：操作按钮栏 -->
+            <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-1 flex items-center gap-2 border-t border-slate-100/80 mt-2">
+              <button 
+                onclick="openCompareModal('${item.id}')"
+                class="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+              >
+                <i data-lucide="calculator" class="w-4 h-4"></i>
+                <span>现场比价决策</span>
+              </button>
+
+              ${item.link ? `
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition" title="跳转原始商品页">
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+              ` : ''}
+
+              <button 
+                onclick="editItem('${item.id}')"
+                class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition"
+                title="编辑详情"
+              >
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+
+              <button 
+                onclick="deleteItem('${item.id}')"
+                class="p-2.5 rounded-xl border border-slate-200 text-red-400 hover:text-red-600 hover:bg-red-50 transition"
+                title="删除"
+              >
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function openConfigModal() {
+      openModal('modal-config');
+      renderConfigManagementLists();
+      lucide.createIcons();
+    }
+
+    function openConfigModalTab(tab) {
+      openConfigModal();
+      switchConfigTab(tab);
+    }
+
+    function switchConfigTab(tab) {
+      const tabs = ['categories', 'scenarios', 'statuses'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (t === tab) {
+          btn.className = 'py-3 border-b-2 border-slate-900 text-slate-900 transition flex items-center gap-1.5 font-bold';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-1.5';
+          content.classList.add('hidden');
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function renderConfigManagementLists() {
+      // 计数器更新
+      document.getElementById('count-categories').textContent = appConfig.categories.length;
+      document.getElementById('count-scenarios').textContent = appConfig.scenarios.length;
+      document.getElementById('count-statuses').textContent = appConfig.statuses.length;
+
+      // 1. 分类列表
+      const catList = document.getElementById('config-categories-list');
+      catList.innerHTML = appConfig.categories.map((c, i) => {
+        const count = items.filter(it => it.category === c).length;
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition text-xs">
+            <span class="font-medium text-slate-800 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+              ${escapeHtml(c)}
+              <span class="text-[10px] text-slate-400 font-normal">(${count} 个好物)</span>
+            </span>
+            <button onclick="removeCategory(${i})" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="删除此分类">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // 2. 场景列表
+      const scnList = document.getElementById('config-scenarios-list');
+      scnList.innerHTML = appConfig.scenarios.map((s, i) => {
+        const count = items.filter(it => it.scene === s).length;
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition text-xs">
+            <span class="font-medium text-slate-800 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              ${escapeHtml(s)}
+              <span class="text-[10px] text-slate-400 font-normal">(${count} 个好物)</span>
+            </span>
+            <button onclick="removeScenario(${i})" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="删除此场景">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // 3. 状态列表
+      const statList = document.getElementById('config-statuses-list');
+      statList.innerHTML = appConfig.statuses.map((s, i) => {
+        const count = items.filter(it => it.status === s.id).length;
+        const color = COLOR_MAP[s.color] || COLOR_MAP.slate;
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition text-xs">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md font-semibold text-[11px] ${color.badge}">
+                ${escapeHtml(s.name)}
+              </span>
+              <span class="text-[10px] text-slate-400">ID: ${escapeHtml(s.id)} · (${count} 件)</span>
+            </div>
+            <button onclick="removeStatus(${i})" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="删除此状态">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // 分类增删
+    function handleAddCategory(e) {
+      e.preventDefault();
+      const input = document.getElementById('input-new-category');
+      const val = input.value.trim();
+      if (!val) return;
+      if (appConfig.categories.includes(val)) {
+        alert('该分类已存在！');
+        return;
+      }
+      appConfig.categories.push(val);
+      saveConfigs();
+      input.value = '';
+      refreshAllDynamicUI();
+    }
+
+    function removeCategory(index) {
+      const name = appConfig.categories[index];
+      if (appConfig.categories.length <= 1) {
+        alert('请至少保留一个分类！');
+        return;
+      }
+      if (confirm(`确定删除分类「${name}」吗？已归为此类的物品将保留文本。`)) {
+        appConfig.categories.splice(index, 1);
+        saveConfigs();
+        refreshAllDynamicUI();
+      }
+    }
+
+    // 场景增删
+    function handleAddScenario(e) {
+      e.preventDefault();
+      const input = document.getElementById('input-new-scenario');
+      const val = input.value.trim();
+      if (!val) return;
+      if (appConfig.scenarios.includes(val)) {
+        alert('该比价场景已存在！');
+        return;
+      }
+      appConfig.scenarios.push(val);
+      saveConfigs();
+      input.value = '';
+      refreshAllDynamicUI();
+    }
+
+    function removeScenario(index) {
+      const name = appConfig.scenarios[index];
+      if (appConfig.scenarios.length <= 1) {
+        alert('请至少保留一个场景！');
+        return;
+      }
+      if (confirm(`确定删除场景「${name}」吗？`)) {
+        appConfig.scenarios.splice(index, 1);
+        saveConfigs();
+        refreshAllDynamicUI();
+      }
+    }
+
+    // 状态增删
+    function handleAddStatus(e) {
+      e.preventDefault();
+      const inputName = document.getElementById('input-new-status-name');
+      const name = inputName.value.trim();
+      if (!name) return;
+
+      const checkedColor = document.querySelector('input[name="status-color"]:checked')?.value || 'blue';
+      const id = 'status_' + Date.now();
+
+      appConfig.statuses.push({
+        id,
+        name,
+        color: checkedColor
+      });
+
+      saveConfigs();
+      inputName.value = '';
+      refreshAllDynamicUI();
+    }
+
+    function removeStatus(index) {
+      const target = appConfig.statuses[index];
+      if (appConfig.statuses.length <= 1) {
+        alert('请至少保留一个心愿状态！');
+        return;
+      }
+      if (confirm(`确定删除状态「${target.name}」吗？`)) {
+        appConfig.statuses.splice(index, 1);
+        saveConfigs();
+        refreshAllDynamicUI();
+      }
+    }
+
+    function restoreDefaultConfigs() {
+      if (confirm('确定恢复官方默认分类、场景与状态配置吗？你自定义添加的项目将被重置。')) {
+        appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+        saveConfigs();
+        refreshAllDynamicUI();
+      }
+    }
+
+    function openNewItemModal() {
+      document.getElementById('item-form').reset();
+      document.getElementById('item-id').value = '';
+      document.getElementById('modal-item-title').innerHTML = `
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+        <span>记录想买好物 (慢买清单)</span>
+      `;
+      clearImage();
+      populateFormDropdowns();
+      
+      // 默认选中第一个状态
+      const firstRadio = document.querySelector('input[name="item-status"]');
+      if (firstRadio) firstRadio.checked = true;
+
+      openModal('modal-item');
+      lucide.createIcons();
+    }
+
+    function editItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      populateFormDropdowns();
+
+      document.getElementById('item-id').value = item.id;
+      document.getElementById('item-title').value = item.title || '';
+      document.getElementById('item-brand').value = item.brand || '';
+      
+      // 分类与场景回填（如自定义分类已被删，也平滑兼容添加该临时option）
+      setSelectValueOrAdd('item-category', item.category);
+      setSelectValueOrAdd('item-scene', item.scene);
+
+      document.getElementById('item-spec').value = item.spec || '';
+      document.getElementById('item-size').value = item.size || '';
+      document.getElementById('item-original-price').value = item.originalPrice || '';
+      document.getElementById('item-target-price').value = item.targetPrice || '';
+      document.getElementById('item-image-url').value = item.imageUrl || '';
+      document.getElementById('item-link').value = item.link || '';
+      document.getElementById('item-notes').value = item.notes || '';
+
+      const statusRadio = document.querySelector(`input[name="item-status"][value="${item.status}"]`);
+      if (statusRadio) {
+        statusRadio.checked = true;
+      } else {
+        const first = document.querySelector('input[name="item-status"]');
+        if (first) first.checked = true;
+      }
+
+      if (item.imageUrl) {
+        setPreviewImage(item.imageUrl);
+      } else {
+        clearImage();
+      }
+
+      document.getElementById('modal-item-title').innerHTML = `
+        <i data-lucide="edit" class="w-4 h-4 text-blue-500"></i>
+        <span>编辑好物备忘</span>
+      `;
+      openModal('modal-item');
+      lucide.createIcons();
+    }
+
+    function setSelectValueOrAdd(selectId, value) {
+      if (!value) return;
+      const select = document.getElementById(selectId);
+      let exists = false;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === value) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = `${value} (已停用)`;
+        select.appendChild(opt);
+      }
+      select.value = value;
+    }
+
+    function handleSaveItem(e) {
+      e.preventDefault();
+      const id = document.getElementById('item-id').value;
+      const title = document.getElementById('item-title').value.trim();
+      const brand = document.getElementById('item-brand').value.trim();
+      const category = document.getElementById('item-category').value;
+      const scene = document.getElementById('item-scene').value;
+      const spec = document.getElementById('item-spec').value.trim();
+      const size = document.getElementById('item-size').value.trim();
+      const originalPrice = parseFloat(document.getElementById('item-original-price').value) || 0;
+      const targetPrice = parseFloat(document.getElementById('item-target-price').value) || 0;
+      const externalImg = document.getElementById('item-image-url').value.trim();
+      const link = document.getElementById('item-link').value.trim();
+      const notes = document.getElementById('item-notes').value.trim();
+      const status = document.querySelector('input[name="item-status"]:checked')?.value || (appConfig.statuses[0]?.id || 'watching');
+
+      const finalImage = currentUploadedBase64 || externalImg || '';
+
+      if (id) {
+        const index = items.findIndex(i => i.id === id);
+        if (index !== -1) {
+          items[index] = {
+            ...items[index],
+            title,
+            brand,
+            category,
+            scene,
+            spec,
+            size,
+            originalPrice,
+            targetPrice,
+            imageUrl: finalImage,
+            link,
+            notes,
+            status
+          };
+        }
+      } else {
+        const newItem = {
+          id: 'item_' + Date.now(),
+          title,
+          brand,
+          category,
+          scene,
+          spec,
+          size,
+          originalPrice,
+          targetPrice,
+          imageUrl: finalImage,
+          link,
+          notes,
+          status,
+          createdAt: new Date().toISOString().split('T')[0],
+          quotes: []
+        };
+        items.unshift(newItem);
+      }
+
+      saveItems();
+      closeModal('modal-item');
+      renderCards();
+    }
+
+    function deleteItem(id) {
+      const target = items.find(i => i.id === id);
+      const name = target ? target.title : '该物品';
+      if (confirm(`确定要从慢买清单中移除「${name}」吗？`)) {
+        items = items.filter(i => i.id !== id);
+        saveItems();
+        renderCards();
+      }
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 4 * 1024 * 1024) {
+        alert('为了保证本地存储顺畅，建议图片大小控制在 4MB 以内');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        currentUploadedBase64 = event.target.result;
+        setPreviewImage(currentUploadedBase64);
+        document.getElementById('item-image-url').value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewExternalImage(url) {
+      if (url && url.startsWith('http')) {
+        currentUploadedBase64 = '';
+        setPreviewImage(url);
+      }
+    }
+
+    function setPreviewImage(src) {
+      const img = document.getElementById('image-preview');
+      const placeholder = document.getElementById('image-preview-placeholder');
+      const removeBtn = document.getElementById('remove-img-btn');
+
+      img.src = src;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      removeBtn.classList.remove('hidden');
+    }
+
+    function clearImage() {
+      currentUploadedBase64 = '';
+      document.getElementById('item-image-url').value = '';
+      document.getElementById('item-file-input').value = '';
+      const img = document.getElementById('image-preview');
+      img.src = '';
+      img.classList.add('hidden');
+      document.getElementById('image-preview-placeholder').classList.remove('hidden');
+      document.getElementById('remove-img-btn').classList.add('hidden');
+    }
+
+    function openCompareModal(itemId) {
+      const item = items.find(i => i.id === itemId);
+      if (!item) return;
+
+      currentCompareItem = item;
+      document.getElementById('compare-item-id').value = item.id;
+      document.getElementById('compare-target-title').textContent = item.title;
+      document.getElementById('compare-target-price-display').textContent = `¥ ${Number(item.targetPrice || 0).toLocaleString()}`;
+      document.getElementById('compare-origin-price-display').textContent = item.originalPrice ? `¥ ${Number(item.originalPrice).toLocaleString()}` : '未填原价';
+
+      document.getElementById('compare-input-price').value = '';
+      document.getElementById('compare-discount').value = '1.0';
+      document.getElementById('compare-location-tag').value = item.scene || '免税店现场';
+
+      handleCurrencyChange();
+      renderQuoteHistory(item);
+      calculateDecision();
+
+      openModal('modal-compare');
+      lucide.createIcons();
+    }
+
+    function handleCurrencyChange() {
+      const sel = document.getElementById('compare-currency');
+      const opt = sel.options[sel.selectedIndex];
+      const rate = opt.getAttribute('data-rate');
+      document.getElementById('compare-rate').value = rate;
+
+      const symbolMap = { CNY: '¥', JPY: '¥', USD: '$', EUR: '€', KRW: '₩', HKD: 'HK$', GBP: '£' };
+      document.getElementById('compare-currency-symbol').textContent = symbolMap[sel.value] || '¥';
+
+      calculateDecision();
+    }
+
+    function calculateDecision() {
+      if (!currentCompareItem) return;
+
+      const inputPrice = parseFloat(document.getElementById('compare-input-price').value);
+      const rate = parseFloat(document.getElementById('compare-rate').value) || 1.0;
+      const discount = parseFloat(document.getElementById('compare-discount').value) || 1.0;
+
+      const calcCnyElem = document.getElementById('calc-cny-price');
+      const badgeElem = document.getElementById('decision-badge');
+      const detailsElem = document.getElementById('decision-details');
+      const panelElem = document.getElementById('decision-panel');
+      const savedOrigElem = document.getElementById('calc-saved-original');
+      const targetDiffElem = document.getElementById('calc-target-diff');
+
+      if (!inputPrice || isNaN(inputPrice) || inputPrice <= 0) {
+        calcCnyElem.textContent = '¥ --';
+        badgeElem.className = 'py-2.5 px-3.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 bg-slate-200 text-slate-600';
+        badgeElem.innerHTML = `<i data-lucide="help-circle" class="w-4 h-4"></i><span>请输入现场价格进行比对研判</span>`;
+        detailsElem.classList.add('hidden');
+        panelElem.className = 'rounded-2xl p-4 border transition-all duration-300 bg-slate-50 border-slate-200';
+        lucide.createIcons();
+        return;
+      }
+
+      const finalPriceCNY = Math.round(inputPrice * rate * discount);
+      calcCnyElem.textContent = `¥ ${finalPriceCNY.toLocaleString()}`;
+
+      const targetPrice = currentCompareItem.targetPrice || 0;
+      const originPrice = currentCompareItem.originalPrice || 0;
+
+      const diffWithTarget = finalPriceCNY - targetPrice;
+      const savedFromOrigin = originPrice ? (originPrice - finalPriceCNY) : 0;
+
+      detailsElem.classList.remove('hidden');
+
+      if (originPrice > 0) {
+        const percentSaved = Math.round((savedFromOrigin / originPrice) * 100);
+        savedOrigElem.textContent = savedFromOrigin > 0 ? `省 ¥${savedFromOrigin.toLocaleString()} (${percentSaved}%)` : `贵了 ¥${Math.abs(savedFromOrigin).toLocaleString()}`;
+        savedOrigElem.className = savedFromOrigin > 0 ? 'font-bold text-emerald-600' : 'font-bold text-red-500';
+      } else {
+        savedOrigElem.textContent = '未设定专柜原价';
+        savedOrigElem.className = 'font-bold text-slate-400';
+      }
+
+      // 智能三色研判红绿灯
+      if (diffWithTarget <= 0) {
+        badgeElem.className = 'py-2.5 px-3.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 bg-emerald-500 text-white shadow-sm pulse-glow';
+        badgeElem.innerHTML = `<i data-lucide="check-check" class="w-4 h-4"></i><span>🟢【神价必冲】低于你的底价 ${Math.abs(diffWithTarget)} 元！直接买！</span>`;
+        panelElem.className = 'rounded-2xl p-4 border transition-all duration-300 bg-emerald-50/70 border-emerald-300';
+        targetDiffElem.textContent = `低于底价 ¥${Math.abs(diffWithTarget)}`;
+        targetDiffElem.className = 'font-bold text-emerald-600';
+      } else if (diffWithTarget <= targetPrice * 0.06) {
+        badgeElem.className = 'py-2.5 px-3.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 bg-amber-500 text-white shadow-sm';
+        badgeElem.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i><span>🟡【合理好价】逼近底价(仅差¥${diffWithTarget})，刚需可果断入手</span>`;
+        panelElem.className = 'rounded-2xl p-4 border transition-all duration-300 bg-amber-50/70 border-amber-300';
+        targetDiffElem.textContent = `高于底价 ¥${diffWithTarget}`;
+        targetDiffElem.className = 'font-bold text-amber-600';
+      } else {
+        badgeElem.className = 'py-2.5 px-3.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 bg-red-100 text-red-700 border border-red-200';
+        badgeElem.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4"></i><span>🔴【价格偏高】比心理底价贵 ¥${diffWithTarget}，保持克制，继续观望</span>`;
+        panelElem.className = 'rounded-2xl p-4 border transition-all duration-300 bg-red-50/50 border-red-200';
+        targetDiffElem.textContent = `超支 ¥${diffWithTarget}`;
+        targetDiffElem.className = 'font-bold text-red-600';
+      }
+
+      lucide.createIcons();
+    }
+
+    function recordCurrentQuote() {
+      if (!currentCompareItem) return;
+
+      const inputPrice = parseFloat(document.getElementById('compare-input-price').value);
+      const rate = parseFloat(document.getElementById('compare-rate').value) || 1.0;
+      const discount = parseFloat(document.getElementById('compare-discount').value) || 1.0;
+      const currency = document.getElementById('compare-currency').value;
+      const location = document.getElementById('compare-location-tag').value.trim() || '现场实探';
+
+      if (!inputPrice || isNaN(inputPrice)) {
+        alert('请先输入当前现场的价格！');
+        return;
+      }
+
+      const finalPriceCNY = Math.round(inputPrice * rate * discount);
+
+      if (!currentCompareItem.quotes) {
+        currentCompareItem.quotes = [];
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      currentCompareItem.quotes.push({
+        date: today,
+        location,
+        currency,
+        priceOriginal: inputPrice,
+        priceCNY: finalPriceCNY
+      });
+
+      const idx = items.findIndex(i => i.id === currentCompareItem.id);
+      if (idx !== -1) {
+        items[idx] = currentCompareItem;
+        saveItems();
+      }
+
+      renderQuoteHistory(currentCompareItem);
+      renderCards();
+    }
+
+    function renderQuoteHistory(item) {
+      const container = document.getElementById('quote-history-list');
+      const countElem = document.getElementById('quote-count');
+      const quotes = item.quotes || [];
+
+      countElem.textContent = `${quotes.length} 次记录`;
+
+      if (quotes.length === 0) {
+        container.innerHTML = `
+          <div class="text-slate-400 py-3 text-center bg-slate-50 rounded-xl text-xs">
+            暂无比价足迹，在现场比价时随时保存吧！
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = [...quotes].reverse().map(q => {
+        const isBetter = q.priceCNY <= (item.targetPrice || 0);
+        return `
+          <div class="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/70 text-xs">
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full ${isBetter ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+              <span class="font-medium text-slate-800">${escapeHtml(q.location)}</span>
+              <span class="text-[10px] text-slate-400">(${q.date})</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-400">${q.priceOriginal} ${q.currency}</span>
+              <span class="font-bold ${isBetter ? 'text-emerald-600' : 'text-slate-900'}">≈ ¥${q.priceCNY}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openDataModal() {
+      openModal('modal-data');
+    }
+
+    function exportDataJSON() {
+      const exportObject = {
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        configs: appConfig,
+        items: items
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObject, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `SmartBuy_Backup_Package_${date}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (parsed && (Array.isArray(parsed) || parsed.items)) {
+            if (parsed.configs) {
+              appConfig = parsed.configs;
+              saveConfigs();
+            }
+            items = Array.isArray(parsed) ? parsed : (parsed.items || []);
+            saveItems();
+            refreshAllDynamicUI();
+            closeModal('modal-data');
+            alert('数据与自定义配置包导入成功！');
+          } else {
+            alert('导入的文件格式有误，需为标准的 SmartBuy 备份包。');
+          }
+        } catch (err) {
+          alert('解析 JSON 失败：' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function loadSamplePresetData() {
+      if (confirm('确定要恢复官方精选示例清单吗？当前已有记录将被覆盖。')) {
+        appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIGS));
+        items = JSON.parse(JSON.stringify(SAMPLE_ITEMS));
+        saveConfigs();
+        saveItems();
+        refreshAllDynamicUI();
+        closeModal('modal-data');
+      }
+    }
+
+    function clearAllDataWithConfirm() {
+      if (confirm('警告：此操作将清空你的全部心愿比价清单且不可撤销，确定要清空吗？')) {
+        items = [];
+        saveItems();
+        renderCards();
+        closeModal('modal-data');
+      }
+    }
+
+    function updateStats() {
+      const watching = items.filter(i => i.status === 'watching' || i.status === 'fitting' || i.status === 'urgent');
+      const purchased = items.filter(i => i.status === 'purchased');
+      const totalTarget = watching.reduce((sum, item) => sum + (Number(item.targetPrice) || 0), 0);
+
+      document.getElementById('stat-watching').textContent = watching.length;
+      document.getElementById('stat-purchased').textContent = purchased.length;
+      document.getElementById('stat-total-budget').textContent = '¥' + Math.round(totalTarget).toLocaleString();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      input.value = '';
+      document.getElementById('search-clear-btn').classList.add('hidden');
+      renderCards();
+    }
+
+    function resetFilters() {
+      activeScene = '全部';
+      activeCategory = '全部';
+      document.getElementById('search-input').value = '';
+      document.getElementById('status-filter').value = 'all';
+      renderScenePills();
+      renderCategoryPills();
+      renderCards();
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
